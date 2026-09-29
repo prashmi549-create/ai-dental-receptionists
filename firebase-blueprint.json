@@ -1,0 +1,175 @@
+{
+  "entities": {
+    "DemoAppointmentSlot": {
+      "title": "DemoAppointmentSlot",
+      "description": "Demo appointment availability slot for scheduling demonstration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "duration": { "type": "number" },
+        "endTime": { "type": "string" },
+        "source": { "type": "string", "enum": ["automatic", "manual"] },
+        "status": { "type": "string", "enum": ["available", "booked", "disabled", "expired"] },
+        "type": { "type": "string", "enum": ["normal", "urgent"] },
+        "note": { "type": "string" },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "disabledAt": { "type": "string" },
+        "disabledBy": { "type": "string" }
+      },
+      "required": ["date", "time", "status", "location"]
+    },
+    "ClinicScheduleConfig": {
+      "title": "ClinicScheduleConfig",
+      "description": "Clinic schedule and duration configurations",
+      "type": "object",
+      "properties": {
+        "weekdayOpen": { "type": "string" },
+        "weekdayClose": { "type": "string" },
+        "saturdayOpen": { "type": "string" },
+        "saturdayClose": { "type": "string" },
+        "sundayOpen": { "type": "boolean" },
+        "slotIntervalMinutes": { "type": "number" },
+        "availabilityWindowDays": { "type": "number" },
+        "urgentSlotsPerDay": { "type": "number" },
+        "urgentSlotTimes": { "type": "array", "items": { "type": "string" } },
+        "serviceDurations": { "type": "object" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      }
+    },
+    "BusinessConfig": {
+      "title": "BusinessConfig",
+      "description": "Business profile and AI receptionist branding customization",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string" },
+        "receptionistName": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "primaryAccentColor": { "type": "string" },
+        "welcomeMessage": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "timezone": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["businessName", "receptionistName", "primaryAccentColor", "welcomeMessage", "phone", "address", "timezone"]
+    },
+    "DemoAppointmentPreference": {
+      "title": "DemoAppointmentPreference",
+      "description": "Demonstration appointment preference request without PHI",
+      "type": "object",
+      "properties": {
+        "slotId": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientPhone": { "type": "string" },
+        "patientType": { "type": "string", "enum": ["new", "existing"] },
+        "reason": { "type": "string" },
+        "reasonForVisit": { "type": "string" },
+        "type": { "type": "string", "enum": ["normal", "urgent"] },
+        "appointmentType": { "type": "string", "enum": ["normal", "urgent"] },
+        "isUrgent": { "type": "boolean" },
+        "date": { "type": "string" },
+        "appointmentDate": { "type": "string" },
+        "time": { "type": "string" },
+        "appointmentTime": { "type": "string" },
+        "location": { "type": "string" },
+        "status": { "type": "string", "enum": ["booked", "cancelled"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "cancelledAt": { "type": "string" },
+        "cancelledBy": { "type": "string" },
+        "rescheduledAt": { "type": "string" },
+        "rescheduledBy": { "type": "string" },
+        "previousSlotId": { "type": "string" },
+        "previousDate": { "type": "string" },
+        "previousTime": { "type": "string" },
+        "isDemo": { "type": "boolean" }
+      },
+      "required": ["patientType", "reason", "date", "time", "location", "isDemo"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "Demo patient profile for demonstration phone lookup",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "patientType": { "type": "string", "enum": ["existing", "new"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["fullName", "phone", "patientType"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator user profile for access control",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Appointment notification record for patient messaging dispatch",
+      "type": "object",
+      "properties": {
+        "appointmentId": { "type": "string" },
+        "patientId": { "type": ["string", "null"] },
+        "patientName": { "type": "string" },
+        "phone": { "type": "string" },
+        "channel": { "type": "string", "enum": ["sms"] },
+        "type": { "type": "string", "enum": ["appointment_confirmation", "appointment_cancellation", "appointment_rescheduled", "appointment_reminder_24h", "appointment_reminder_2h"] },
+        "status": { "type": "string", "enum": ["pending", "sent", "failed", "cancelled"] },
+        "message": { "type": "string" },
+        "scheduledFor": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "cancelledAt": { "type": "string" }
+      },
+      "required": ["appointmentId", "patientName", "phone", "channel", "type", "status", "message"]
+    }
+  },
+  "firestore": {
+    "/demo_appointment_slots/{slotId}": {
+      "schema": { "$ref": "#/entities/DemoAppointmentSlot" },
+      "description": "Public demo appointment slots collection"
+    },
+    "/demo_appointment_preferences/{prefId}": {
+      "schema": { "$ref": "#/entities/DemoAppointmentPreference" },
+      "description": "Recorded demo appointment preferences"
+    },
+    "/patients/{patientId}": {
+      "schema": { "$ref": "#/entities/Patient" },
+      "description": "Demo patient profiles for phone recognition lookup"
+    },
+    "/admins/{email}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Authorized administrator profiles keyed by authenticated email"
+    },
+    "/notifications/{notifId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Appointment notification records for pending dispatch"
+    },
+    "/clinic_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ClinicScheduleConfig" },
+      "description": "Clinic schedule and duration configurations"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ClinicScheduleConfig" },
+      "description": "Clinic schedule and business controls settings"
+    },
+    "/settings/business": {
+      "schema": { "$ref": "#/entities/BusinessConfig" },
+      "description": "Business profile and branding settings for receptionist and widget"
+    }
+  }
+}

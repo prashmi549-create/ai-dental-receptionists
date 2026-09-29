@@ -1,0 +1,6 @@
+{
+  "name": "Dental Care & Implants - AI Concierge",
+  "description": "Standalone AI dental receptionist product demo for Dental Care & Implants of Houston, featuring conversational Firestore appointment booking, clinical inquiry handling, and full administrative appointment and slot management.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

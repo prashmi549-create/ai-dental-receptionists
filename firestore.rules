@@ -1,0 +1,173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Validates that the request is made by an authenticated admin user.
+    // Checks that request.auth exists, email exists, and admins/{email} has role == 'admin'.
+    function isAuthorizedAdmin() {
+      return request.auth != null && request.auth.token.email != null &&
+        (
+          (exists(/databases/$(database)/documents/admins/$(request.auth.token.email)) &&
+           get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.role == 'admin') ||
+          (exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())) &&
+           get(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())).data.role == 'admin')
+        );
+    }
+
+    // Demo appointment slots (and slots alias) for availability checking and booking
+    match /demo_appointment_slots/{slotId} {
+      // Public / receptionist can read slot availability
+      allow read: if true;
+      // Only authorized admins can create new slots or availability exceptions
+      allow create: if isAuthorizedAdmin();
+      // Only authorized admins can delete slots
+      allow delete: if isAuthorizedAdmin();
+      // Only authorized admins can modify slot details or disable slots,
+      // OR legitimate patient booking transaction reserving an available slot
+      allow update: if isAuthorizedAdmin() || (
+        resource.data.status == 'available' &&
+        request.resource.data.status == 'booked' &&
+        request.resource.data.date == resource.data.date &&
+        request.resource.data.time == resource.data.time
+      );
+    }
+
+    match /slots/{slotId} {
+      allow read: if true;
+      allow create: if isAuthorizedAdmin();
+      allow delete: if isAuthorizedAdmin();
+      allow update: if isAuthorizedAdmin() || (
+        resource.data.status == 'available' &&
+        request.resource.data.status == 'booked' &&
+        request.resource.data.date == resource.data.date &&
+        request.resource.data.time == resource.data.time
+      );
+    }
+
+    // Appointment bookings (demo_appointment_preferences & appointments)
+    match /demo_appointment_preferences/{prefId} {
+      // Read allowed for slot availability collision checks and scheduling display
+      allow read: if true;
+      // Public booking flow may only create legitimate demo appointment records
+      allow create: if isAuthorizedAdmin() || (
+        request.resource.data.isDemo == true &&
+        request.resource.data.slotId is string &&
+        request.resource.data.slotId.size() > 0 &&
+        request.resource.data.date is string &&
+        request.resource.data.date.size() > 0 &&
+        request.resource.data.time is string &&
+        request.resource.data.time.size() > 0 &&
+        request.resource.data.patientName is string &&
+        request.resource.data.patientName.size() > 0 &&
+        request.resource.data.patientPhone is string &&
+        request.resource.data.patientPhone.size() > 0 &&
+        request.resource.data.patientType in ['new', 'existing'] &&
+        (!('status' in request.resource.data) || request.resource.data.status in ['booked', 'Booked'])
+      );
+      // Only authorized admins can modify, cancel, or reschedule appointments
+      allow update: if isAuthorizedAdmin();
+      // Only authorized admins can delete appointment records
+      allow delete: if isAuthorizedAdmin();
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if true;
+      allow create: if isAuthorizedAdmin() || (
+        request.resource.data.isDemo == true &&
+        request.resource.data.slotId is string &&
+        request.resource.data.slotId.size() > 0 &&
+        request.resource.data.date is string &&
+        request.resource.data.date.size() > 0 &&
+        request.resource.data.time is string &&
+        request.resource.data.time.size() > 0 &&
+        request.resource.data.patientName is string &&
+        request.resource.data.patientName.size() > 0 &&
+        request.resource.data.patientPhone is string &&
+        request.resource.data.patientPhone.size() > 0 &&
+        request.resource.data.patientType in ['new', 'existing'] &&
+        (!('status' in request.resource.data) || request.resource.data.status in ['booked', 'Booked'])
+      );
+      allow update: if isAuthorizedAdmin();
+      allow delete: if isAuthorizedAdmin();
+    }
+
+    // Legacy demo patient preferences (read-only for backwards compatibility)
+    match /demo_patient_preferences/{prefId} {
+      allow read: if true;
+      allow write: if isAuthorizedAdmin();
+    }
+
+    // Patient profiles - demo patient recognition & registration
+    match /patients/{patientId} {
+      // Allow read for receptionist phone number verification and admin management
+      allow read: if true;
+      // Allow create/update for authorized admins OR legitimate public booking registration with allowed demo fields only
+      allow create: if isAuthorizedAdmin() || (
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() > 0 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 0 &&
+        request.resource.data.patientType in ['new', 'existing']
+      );
+      allow update: if isAuthorizedAdmin() || (
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() > 0 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 0 &&
+        request.resource.data.patientType in ['new', 'existing']
+      );
+      allow delete: if isAuthorizedAdmin();
+    }
+
+    // Appointment notifications (Phase 6A, 6B, 6C & Phase 10A hardened security)
+    match /notifications/{notifId} {
+      // Notification history is strictly restricted to authorized administrators
+      allow read: if isAuthorizedAdmin();
+      // Public booking flow may only queue initial pending SMS confirmation & reminder records
+      allow create: if isAuthorizedAdmin() || (
+        request.resource.data.status == 'pending' &&
+        request.resource.data.channel == 'sms' &&
+        request.resource.data.type in [
+          'appointment_confirmation',
+          'appointment_reminder_24h',
+          'appointment_reminder_2h'
+        ] &&
+        request.resource.data.appointmentId is string &&
+        request.resource.data.appointmentId.size() > 0 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 0 &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() > 0
+      );
+      // Only authorized administrators may update or cancel notification records
+      allow update: if isAuthorizedAdmin();
+      // Only authorized administrators may delete notification records
+      allow delete: if isAuthorizedAdmin();
+    }
+
+    // Clinic schedule & service duration settings
+    match /clinic_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAuthorizedAdmin();
+    }
+
+    // Business profile & scheduling settings (Phase 9B & Phase 11C settings/business)
+    match /settings/{settingId} {
+      // Public / widget can read presentation & schedule config
+      allow read: if true;
+      // Only authorized admins can write business or scheduling settings
+      allow write: if isAuthorizedAdmin();
+    }
+
+    // Admin authorization collection for role-based access control
+    match /admins/{email} {
+      // Authenticated users may only check their own individual admin profile document
+      allow get: if request.auth != null && request.auth.token.email != null &&
+        (request.auth.token.email == email || request.auth.token.email.lower() == email.lower());
+      // Disallow collection enumeration or listing of all admins
+      allow list: if false;
+      // Disallow client-side creation, update, or deletion of admin records
+      allow write: if false;
+    }
+  }
+}
